@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>EchoPath</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>EchoPath Indoor Navigation</h1>
+
+    <form action="/navigate" method="POST">
+
+        <label>Current Location</label>
+
+        <input type="text"
+               name="start"
+               required>
+
+        <label>Destination</label>
+
+        <input type="text"
+               name="destination"
+               required>
+
+        <button type="submit">
+            Navigate
+        </button>
+
+    </form>
+
+    <br><br>
+
+    <button onclick="startVoiceNavigation()">
+        Start Voice Navigation
+    </button>
+
+    <h2 id="statusText"></h2>
+
+</div>
+
+<script>
+
+function startVoiceNavigation() {
+
+    let statusText =
+        document.getElementById("statusText");
+
+    statusText.innerHTML = "🎤 Listening...";
+
+    const recognition =
+        new webkitSpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    recognition.start();
+
+    recognition.onresult = function(event) {
+
+        let destination =
+            event.results[0][0].transcript;
+
+        destination =
+            destination.trim();
+
+        statusText.innerHTML =
+            "✅ Destination Detected: "
+            + destination;
+
+        // Speak confirmation
+
+        let confirmation =
+            new SpeechSynthesisUtterance(
+                "Route to " +
+                destination +
+                " has been generated."
+            );
+
+        speechSynthesis.speak(confirmation);
+
+        // Redirect to Flask
+
+        setTimeout(() => {
+
+            window.location.href =
+                "/voice_navigation?destination="
+                + destination;
+
+        }, 2000);
+    };
+
+    recognition.onerror = function() {
+
+        statusText.innerHTML =
+            "❌ Speech not detected.";
+
+        let errorSpeech =
+            new SpeechSynthesisUtterance(
+                "Speech not detected. Please try again."
+            );
+
+        speechSynthesis.speak(errorSpeech);
+    };
+}
+
+</script>
+
+</body>
+</html>

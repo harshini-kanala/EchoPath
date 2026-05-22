@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>EchoPath Navigation</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>EchoPath Navigation</h1>
+
+    <h2>Destination:
+        {{ destination }}
+    </h2>
+
+    <h2>Detected Route</h2>
+
+    <ul>
+
+        {% for room in path %}
+
+            <li>{{ room }}</li>
+
+        {% endfor %}
+
+    </ul>
+
+    <h2>Navigation Instructions</h2>
+
+    <ul>
+
+        {% for step in instructions %}
+
+            <li>{{ step }}</li>
+
+        {% endfor %}
+
+    </ul>
+
+    <h2>Hospital Route Map</h2>
+
+    <img src="{{ url_for('static', filename=map_image) }}"
+         width="900">
+
+    <br><br>
+
+    <button onclick="startVoiceControl()">
+
+        Start Voice Navigation
+
+    </button>
+
+</div>
+
+<script>
+
+    const instructions = JSON.parse(
+        '{{ instructions | tojson | safe }}'
+    );
+
+    let currentIndex = 0;
+
+    // TEXT TO SPEECH
+
+    function speak(text, callback=null) {
+
+        let speech =
+            new SpeechSynthesisUtterance(text);
+
+        speech.rate = 1;
+
+        speech.pitch = 1;
+
+        speech.volume = 1;
+
+        speech.lang = "en-US";
+
+        speech.onend = callback;
+
+        window.speechSynthesis.speak(speech);
+    }
+
+    // SPEECH RECOGNITION
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    const recognition =
+        new SpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    recognition.continuous = false;
+
+    recognition.interimResults = false;
+
+    // START NAVIGATION
+
+    function startVoiceControl() {
+
+        speak(
+
+            "Route detected to {{ destination }}",
+
+            function() {
+
+                speakInstruction();
+
+            }
+        );
+    }
+
+    // SPEAK CURRENT STEP
+
+    function speakInstruction() {
+
+        if(currentIndex >= instructions.length) {
+
+            speak(
+                "You have reached your destination"
+            );
+
+            return;
+        }
+
+        speak(
+
+            instructions[currentIndex],
+
+            function() {
+
+                listenForCommand();
+
+            }
+        );
+    }
+
+    // LISTEN FOR NEXT / REPEAT
+
+    function listenForCommand() {
+
+        speak(
+            "Say next or repeat"
+        );
+
+        recognition.start();
+
+    }
+
+    // HANDLE COMMANDS
+
+    recognition.onresult = function(event) {
+
+        let command =
+            event.results[0][0].transcript
+            .toLowerCase();
+
+        console.log(command);
+
+        if(command.includes("next")) {
+
+            currentIndex++;
+
+            speakInstruction();
+
+        }
+
+        else if(command.includes("repeat")) {
+
+            speakInstruction();
+
+        }
+
+        else {
+
+            speak(
+                "Command not recognized. Say next or repeat.",
+
+                function() {
+
+                    listenForCommand();
+
+                }
+            );
+        }
+    };
+
+    // ERROR HANDLING
+
+    recognition.onerror = function(event) {
+
+        console.log(event.error);
+
+        speak(
+
+            "I could not hear you. Please say next or repeat.",
+
+            function() {
+
+                listenForCommand();
+
+            }
+        );
+    };
+
+</script>
+
+</body>
+</html>

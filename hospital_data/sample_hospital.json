@@ -1,0 +1,6 @@
+{
+    "Entrance": ["Reception"],
+    "Reception": ["Corridor A"],
+    "Corridor A": ["Radiology", "Pharmacy"],
+    "Radiology": ["ICU"]
+}
